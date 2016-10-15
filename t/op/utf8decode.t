@@ -22,12 +22,22 @@ $|=1;
 
 no utf8;
 
+my $is64bit = length sprintf("%x", ~0) > 8;
+
 foreach (<DATA>) {
     if (/^(?:\d+(?:\.\d+)?)\s/ || /^#/) {
 	# print "# $_\n";
     } elsif (my ($id, $okay, $Unicode, $byteslen, $hex, $charslen, $experr)
 	     = /^(\d+\.\d+\.\d+[bu]?)   # ID
-		\s+(y|n|N-?\d+)         # expect to pass or fail
+		\s+(y|n|N-?\d+(?:,\d+)?)  # expect to pass or fail
+                                          # 'n' means expect one diagnostic
+                                          # 'N\d+'     means expect this
+                                          #            number of diagnostics
+                                          # 'N\d+,\d+' means expect the first
+                                          #            number of diagnostics
+                                          #            on a 32-bit system; the
+                                          #            second number on a
+                                          #            64-bit one
                 \s+([0-9a-f]{1,8}(?:,[0-9a-f]{1,8})*|-) # Unicode characters
                 \s+(\d+)                # number of octets
                 \s+([0-9a-f]{2}(?::[0-9a-f]{2})*)       # octets in hex
@@ -49,10 +59,11 @@ foreach (<DATA>) {
 	    isnt($experr, '', "Expected warning for $id provided");
 	    warnings_like(sub {unpack 'C0U*', $octets}, [qr/$experr/],
 			 "Only expected warning for $id");
-	} elsif ($okay !~ /^N(-?\d+)/) {
+	} elsif ($okay !~ /^N-?(\d+)(?:,(\d+))?/) {
 	    is($okay, 'n', "Confused test description for $id");
 	} else {
 	    my $expect = $1;
+            $expect = $2 if defined $2 && $is64bit;
 	    my @warnings;
 
 	    {
@@ -85,6 +96,8 @@ done_testing();
 # This table is based on Markus Kuhn's UTF-8 Decode Stress Tester,
 # http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt,
 # version dated 2015-08-28.
+#
+# See the code that parses these lines for comments as to the column meanings
 
 __DATA__
 1	Correct UTF-8
@@ -143,8 +156,8 @@ __DATA__
 3.4.1 N15 -	30	c0:e0:80:f0:80:80:f8:80:80:80:fc:80:80:80:80:df:ef:bf:f7:bf:bf:fb:bf:bf:bf:fd:bf:bf:bf:bf	-	unexpected non-continuation byte 0xe0, immediately after start byte 0xc0
 3.5	Impossible bytes (but not with Perl's extended UTF-8)
 3.5.1 n -	1	fe	-	1 byte, need 7
-3.5.2 n -	1	ff	-	1 byte, need 13
-3.5.3 N5 -	4	fe:fe:ff:ff	-	byte 0xfe
+3.5.2 N2,1 -	1	ff	-	1 byte, need 13
+3.5.3 N8,5 -	4	fe:fe:ff:ff	-	byte 0xfe
 4	Overlong sequences
 4.1	Examples of an overlong ASCII character
 4.1.1 n -	2	c0:af	-	overlong
