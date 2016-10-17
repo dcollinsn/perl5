@@ -7868,6 +7868,8 @@ NULL
 
         case STAR:		/*  /A*B/ where A is width 1 char */
 	    ST.paren = 0;
+            ST.lastparen      = rex->lastparen;
+	    ST.lastcloseparen = rex->lastcloseparen;
 	    ST.min = 0;
 	    ST.max = REG_INFTY;
 	    scan = NEXTOPER(scan);
@@ -7875,6 +7877,8 @@ NULL
 
         case PLUS:		/*  /A+B/ where A is width 1 char */
 	    ST.paren = 0;
+            ST.lastparen      = rex->lastparen;
+	    ST.lastcloseparen = rex->lastcloseparen;
 	    ST.min = 1;
 	    ST.max = REG_INFTY;
 	    scan = NEXTOPER(scan);
@@ -7900,6 +7904,8 @@ NULL
 	    ST.paren = 0;
 	    ST.min = ARG1(scan);  /* min to match */
 	    ST.max = ARG2(scan);  /* max to match */
+            ST.lastparen      = rex->lastparen;
+	    ST.lastcloseparen = rex->lastcloseparen;
 	    scan = NEXTOPER(scan) + NODE_STEP_REGNODE;
 	  repeat:
 	    /*
@@ -8013,7 +8019,7 @@ NULL
 	    /* failed to find B in a non-greedy match where c1,c2 valid */
 
 	    REGCP_UNWIND(ST.cp);
-            if (ST.paren) {
+            if ( 1 || ST.paren ) {
                 UNWIND_PAREN(ST.lastparen, ST.lastcloseparen);
             }
 	    /* Couldn't or didn't -- move forward. */
@@ -8086,7 +8092,7 @@ NULL
 	    /* failed to find B in a non-greedy match where c1,c2 invalid */
 
 	    REGCP_UNWIND(ST.cp);
-            if (ST.paren) {
+            if ( 1 || ST.paren ) {
                 UNWIND_PAREN(ST.lastparen, ST.lastcloseparen);
             }
 	    /* failed -- move forward one */
@@ -8147,7 +8153,7 @@ NULL
 	    /* failed to find B in a greedy match */
 
 	    REGCP_UNWIND(ST.cp);
-            if (ST.paren) {
+            if ( 1 || ST.paren ) {
                 UNWIND_PAREN(ST.lastparen, ST.lastcloseparen);
             }
 	    /*  back up. */
