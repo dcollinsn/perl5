@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 11;  # one test is in each BaseInc* itself
+use Test::More tests => 13;  # one test is in each BaseInc* itself
 
 use lib 't/lib';
 
@@ -9,6 +9,13 @@ use lib 't/lib';
 BEGIN { push @INC, '.' if $INC[-1] ne '.' }
 
 use base 'BaseIncChecker';
+
+BEGIN {
+    @t::lib::Dummy::ISA = (); # make it look like an optional load
+    ok !eval("use base 't::lib::Dummy'"), 'loading optional modules from . fails';
+    like $@, qr!Base class package "t::lib::Dummy" is not empty but "t/lib/Dummy\.pm" exists in the current directory\.!,
+        '... with a proper error message';
+}
 
 BEGIN { @BaseIncExtender::ISA = () } # make it look like an optional load
 use base 'BaseIncExtender';
